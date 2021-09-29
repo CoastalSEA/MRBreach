@@ -8,7 +8,7 @@
 % * *Inputs*: summmary of the properties that have been defined.
 % * *Hypsometry*: plot of the fitted and/or measured hypsometry currently
 % defined.
-% * *Q-Plot*: user selects a variable from imported data or model ouput, and creates a plot on the tab. The plot cannot be edited.
+% * *Q-Plot*: user selects a variable from imported data or model output, and creates a plot on the tab. The plot cannot be edited.
 % * *Stats*: tabulates the results from statistics UI.
 
 %% Accessing Case meta-data
