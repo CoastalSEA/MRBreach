@@ -54,12 +54,10 @@ classdef mrHypsometry < muiPropertyUI
         function loadHypsometry(mobj)
             %import observed hypsometry data from file
             classname = 'mrHypsometry';              
-            if isfield(mobj.Inputs,classname) && ...
-                            isa(mobj.Inputs.(classname),classname)
-                obj = mobj.Inputs.(classname);  
-            else
-                obj = mrHypsometry(mobj);          
-            end
+            obj = getClassObj(mobj,'Inputs',classname);
+            if isempty(obj)
+                obj = mrBHypsometry(mobj);             
+            end   
             
             [fname,path,~] = getfiles('FileType','*.txt');
             filename = [path fname];
@@ -70,7 +68,7 @@ classdef mrHypsometry < muiPropertyUI
             
             obj.ObsHypLevels = data{1};
             obj.ObsHypAreas  = data{2};
-            mobj.Inputs.(classname) = obj;
+            setClassObj(mobj,'Inputs',classname,obj);
         end 
 %%
         function setHypsometry(mobj)

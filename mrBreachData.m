@@ -51,20 +51,19 @@ classdef mrBreachData < muiPropertyUI
     methods (Static)  
         function obj = setInput(mobj,editflag)
             %gui for user to set Parameter Input values
-            classname = 'mrBreachData';           
-            if isfield(mobj.Inputs,classname) && ...
-                            isa(mobj.Inputs.(classname),classname)
-                obj = mobj.Inputs.(classname);  
-            else
-                obj = mrBreachData(mobj);    
-            end
+            classname = 'mrBreachData';   
+            obj = getClassObj(mobj,'Inputs',classname);
+            if isempty(obj)
+                obj = mrBreachData(mobj);             
+            end           
+
             %use muiPropertyUI function to generate UI
             if nargin<2 || editflag
                 %add nrec to limit length of props UI (default=12)
                 obj = editProperties(obj);  
                 %add any additional manipulation of the input here
             end
-            mobj.Inputs.(classname) = obj;
+            setClassObj(mobj,'Inputs',classname,obj);
         end     
     end  
 %%     

@@ -195,7 +195,7 @@ classdef MRBreach < muiModelUI
                 case 'Site Hypsometry'
                     mrHypsometry.loadHypsometry(obj); 
                 case 'Model Constants'
-                    obj.Constants = editProperties(obj.Constants);
+                    obj.Constants = setInput(obj.Constants);
             end
         end  
         %% Run menu -------------------------------------------------------
