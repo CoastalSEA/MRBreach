@@ -133,7 +133,7 @@ classdef MRBreach < muiModelUI
             tabs.Inputs = {'  Inputs  ',@obj.InputTabSummary};
             tabs.Hypsometry = {' Hypsometry ',@(src,evdat)mrHypsometry.tabHypsometry(obj,src,evdat)};
             tabs.Plot   = {'  Q-Plot  ',@obj.getTabData};
-            tabs.Stats = {'   Stats   ',@obj.getTabData};
+            tabs.Stats = {'   Stats   ',@obj.setTabAction};
             subtabs = [];
         end
        
