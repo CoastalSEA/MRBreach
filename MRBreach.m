@@ -223,7 +223,7 @@ classdef MRBreach < muiModelUI
 
         %% Help menu ------------------------------------------------------
         function Help(~,~,~)
-            docsearch MRBreach                               % << Edit to documentation name if available
+            doc mrbreach                               % << Edit to documentation name if available
         end
 %% ------------------------------------------------------------------------
 % Overload muiModelUI.MapTable to customise Tab display of records (if required)
