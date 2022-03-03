@@ -83,25 +83,11 @@ classdef mrHypsometry < muiPropertyUI
             end
             
             obj = selectHypsometry(obj,mobj);
-            if isempty(obj.cstCoefficient)
-                return; %no root found for cst in strahlerHypsometry
-            end
-            h_pnl = findobj(obj.HypFig,'Tag','ButtonPanel');
-            waitfor(h_pnl,'Tag');
-            if strcmp(h_pnl.Tag,'ExitFig')
-                %user has deleted figure without making a selection
-                delete(obj.HypFig);
+            if isempty(obj.cstCoefficient) && obj.HypSelection==1  %fitted model
+                warndlg('No root found for cst in starhlerHypsometry')
                 return;
             end
-            %get theoretical fit for site and plot
-            obj = fittedData(obj,mobj);
-            if strcmp(h_pnl.Tag,'Obs') && isempty(obj.ObsHypLevels)
-                warndlg('No observed data. Using model values')
-            elseif strcmp(h_pnl.Tag,'Obs')
-                obj.HypSelection = 0;
-            else
-                obj.HypSelection = 1;
-            end
+            h_pnl = findobj(obj.HypFig,'Tag','ButtonPanel');
             delete(h_pnl);
             delete(obj.HypFig);
             mobj.Inputs.(classname) = obj;
@@ -109,35 +95,59 @@ classdef mrHypsometry < muiPropertyUI
 %%
         function tabHypsometry(mobj,src,~)
             %generate plot for display on Hypsometry tab
-            ht = findobj(src,'Type','axes');  %clear any existing plot
-            delete(ht);
-            
-            obj = getClassObj(mobj,'Inputs','mrHypsometry'); %hypsometry instance
-            isvalid = isValidModel(mobj,'mrBreachModel');    %input data
-            if ~isvalid && isempty(obj)                       
-                warndlg('No input or observed data available')
+
+            if strcmp(src.Tag,'FigButton')
+                obj = getClassObj(mobj,'Inputs','mrHypsometry'); %hypsometry instance
+                hfig = figure('Tag','PlotFig');
+                ax = axes('Parent',hfig,'Tag','PlotFig','Units','normalized');
+                plotHypsometry(obj,ax);
+            else
+                ht = findobj(src,'Type','axes');
+                delete(ht);
+                ax = axes('Parent',src,'Tag','Q-Plot');
+                %check that hypsommetry has been generated
+                obj = getClassObj(mobj,'Inputs','mrHypsometry'); %hypsometry instance
+                isvalid = isValidModel(mobj,'mrBreachModel');    %input data
+                if ~isvalid && isempty(obj)
+                    warndlg('No input or observed data available')
                     return;
-            elseif isempty(obj)
-                obj = mrHypsometry(mobj);
-            end
-            %
-            if isvalid && isempty(obj.FitHypLevels)                      
-                obj = strahlerHypsometry(obj,mobj);
-                if isempty(obj.cstCoefficient)
-                    warndlg('No root found for cst coefficient')
-                    return;
+                elseif isempty(obj)
+                    obj = mrHypsometry(mobj);
                 end
-                obj = fittedData(obj,mobj);
+                %
+                if isvalid && isempty(obj.FitHypLevels)
+                    obj = strahlerHypsometry(obj,mobj);
+                    if isempty(obj.cstCoefficient)
+                        warndlg('No root found for cst coefficient')
+                        return;
+                    end
+                    obj = fittedData(obj,mobj);
+                end
+                %plot results
+                plotHypsometry(obj,ax);
+                txtstr = 'The thicker line is the hypsometry currrently selected for the model';                
+                hx = findobj(src,'Tag','IStext');
+                if isempty(hx)
+                    uicontrol('Parent',src,...
+                        'Style','text','String',txtstr,...
+                        'HorizontalAlignment','left',...
+                        'Units','normalized','Position',[0.15,0.86,0.6,0.04],...
+                        'Tag','IStext');
+                end
+                
+                hb = findobj(src,'Tag','FigButton');
+                if isempty(hb)
+                    %button to create plot as stand-alone figure
+                    uicontrol('Parent',src,'Style','pushbutton',...
+                        'String','>Figure','Tag','FigButton',...
+                        'TooltipString','Create plot as stand alone figure',...
+                        'Units','normalized','Position',[0.88 0.95 0.10 0.044],...
+                        'Callback',@(src,evdat)mrHypsometry.tabHypsometry(mobj,src,evdat));
+                else
+                    hb.Callback = @(src,evdat)tabPlot(obj,src);
+                end
             end
-            axes('Parent',src,'Tag','Hypsometry')
-            plotHypsometry(obj)
-            txtstr = 'The thicker line is the hypsometry currrently selected for the model';
-            uicontrol('Parent',src,...
-                    'Style','text','String',txtstr,...                    
-                    'HorizontalAlignment','left',...
-                    'Units','normalized','Position',[0.12,0.95,0.6,0.04],...
-                    'Tag','IStext'); 
-        end        
+        end
     end
 %%
     methods
@@ -164,14 +174,22 @@ classdef mrHypsometry < muiPropertyUI
             end
             %get theoretical fit for site and plot
             obj = fittedData(obj,mobj);
-            plotHypsometry(obj)
+            plotHypsometry(obj,obj.HypAx);
             %add sliders to alter Rst and Cst and replot theoretical curve
             Rpos = [0.05,0.02,0.4,0.03];            
             Slider(obj,'rstCoefficient',Rpos,mobj);
             Cpos = [0.55,0.02,0.4,0.03];
             Slider(obj,'cstCoefficient',Cpos,mobj);
             promptxt = 'Use Fit or Obs?';
-            acceptpanel(obj.HypFig,promptxt,{'Fit','Obs'},[0.43,0.927,0.2,0.07]);             
+            h_pnl = acceptpanel(obj.HypFig,promptxt,{'Fit','Obs'},[0.43,0.927,0.2,0.07]);  
+            waitfor(h_pnl,'Tag');
+            %fitted model is the default if figure closed with Exit button or there is no data
+            obj.HypSelection = 1;         %use fitted model 
+            if strcmp(h_pnl.Tag,'Obs') && isempty(obj.ObsHypLevels)
+                warndlg('No observed data. Using model values')
+            elseif strcmp(h_pnl.Tag,'Obs')
+                obj.HypSelection = 0;     %use observations 
+            end
         end
         
  %% ---Main calculation functions---->
@@ -214,24 +232,25 @@ classdef mrHypsometry < muiPropertyUI
         end
         
  %% ----Graphical controls ----->    
-        function plotHypsometry(obj)
+        function plotHypsometry(obj,ax)
             %plot the theoretical and measured site hypsometry
             if obj.HypSelection<1
                 lwidth = [0.6,1.2];
             else
                 lwidth = [1.2,0.6];
             end
-            plot(obj.FitHypAreas,obj.FitHypLevels,'b',...
+            plot(ax,obj.FitHypAreas,obj.FitHypLevels,'b',...
                         'LineWidth',lwidth(1),'DisplayName','Empirical');
                     
             if ~isempty(obj.ObsHypAreas)
                 hold on
-                plot(obj.ObsHypAreas,obj.ObsHypLevels,'r',...
+                plot(ax,obj.ObsHypAreas,obj.ObsHypLevels,'r',...
                         'LineWidth',lwidth(2),'DisplayName','Observed');
                 hold off
             end
             xlabel('Plan area (m^2)')
             ylabel('Elevation (mOD)')
+            title('Hypsometry profiles')
             legend('show','Location','southeast')
         end
 %%

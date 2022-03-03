@@ -71,72 +71,34 @@ classdef mrBreachModel < muiDataSet
     methods
         function tabPlot(obj,src,mobj) %abstract class for muiDataSet
             %generate plot for display on Q-Plot tab
-            %generate plot for display on Plot tab
             %data is retrieved by GUIinterface.getTabData    
-            %get data for variable and dimension z
-            dst = obj.Data.Dataset;
-            z = dst.zCoords;%z co-ordinate data
-            x = dst.Dimensions.X;
-            p = obj.WidthVals;
             sV = mobj.Inputs.mrSiteData;
             iV = mobj.Inputs.mrBreachData;
-            zhw = iV.zHWlevel;          %HW level (mOD)
-            zlw = iV.zLWlevel;          %LW level (mOD)
-            z0  = sV.z0level;           %lowest inerodile site level (mOD)
-            ht = findobj(src,'Type','axes');
-            delete(ht);
-            ax = axes('Parent',src,'Tag','Regime');
-            plot( x,z,...
-             '-r', 'DisplayName', 'Regime profile',...
-             'XDataSource', 'yreg', 'YDataSource', 'xreg','LineWidth',1.5);
-            xlabel('Distance (m)'); ylabel('Elevation (mODN)');
-            hold on
-            if ~isempty(p.bhw)
-                hwline = [zhw zhw]; lwline = [zlw zlw]; zsline = [z0 z0];
-                yline = [0 p.bhw*2];
-                yrect = [p.bhw-p.Wmx/2 p.bhw-p.Wmx/2 p.bhw+p.Wmx/2 p.bhw+p.Wmx/2]; 
-                zrect = [zhw z0 z0 zhw];
-                plot(yline,hwline,'--b','LineWidth',1,'DisplayName','High water');
-                plot(yline,lwline,'--b','LineWidth',1,'DisplayName','Low water');
-                plot(yline,zsline,'-.g','LineWidth',1,'DisplayName','Breach invert');
-                plot(yrect,zrect,':m','LineWidth',1,'DisplayName','Minimum box section');
-            end
-            hold off
-            legend('show','Location','southwest')
-            title(dst.Description)
-            ax.Color = [0.96,0.96,0.96];  %needs to be set after plot
+            if strcmp(src.Tag,'FigButton')
+                hfig = figure('Tag','PlotFig');
+                ax = axes('Parent',hfig,'Tag','PlotFig','Units','normalized');
+                breachModelPlot(obj,ax,sV,iV);             
+            else
+                ht = findobj(src,'Type','axes');
+                delete(ht);
+                ax = axes('Parent',src,'Tag','Q-Plot');
+                breachModelPlot(obj,ax,sV,iV); 
+                hb = findobj(src,'Tag','FigButton');
+                if isempty(hb)
+                    %button to create plot as stand-alone figure
+                    uicontrol('Parent',src,'Style','pushbutton',...
+                        'String','>Figure','Tag','FigButton',...
+                        'TooltipString','Create plot as stand alone figure',...
+                        'Units','normalized','Position',[0.88 0.95 0.10 0.044],...
+                        'Callback',@(src,evdat)tabPlot(obj,src,mobj));
+                else
+                    hb.Callback = @(src,evdat)tabPlot(obj,src,mobj);     
+                end
+            end            
         end
     end 
 %%    
     methods (Access = private)
-        function dsp = modelDSproperties(~) 
-            %define a dsproperties struct and add the model metadata
-            dsp = struct('Variables',[],'Row',[],'Dimensions',[]); 
-            %define each variable to be included in the data table and any
-            %information about the dimensions. dstable Row and Dimensions can
-            %accept most data types but the values in each vector must be unique
-            
-            %struct entries are cell arrays and can be column or row vectors
-            dsp.Variables = struct(...                       % <<Edit metadata to suit model
-                'Name',{'zCoords'},...
-                'Description',{'Elevation'},...
-                'Unit',{'mOD'},...
-                'Label',{'Elevation (mOD)'},...
-                'QCflag',{'model'}); 
-            dsp.Row = struct(...
-                'Name',{''},...
-                'Description',{''},...
-                'Unit',{''},...
-                'Label',{''},...
-                'Format',{''});        
-            dsp.Dimensions = struct(...    
-                'Name',{'X'},...
-                'Description',{'Width'},...
-                'Unit',{'m'},...
-                'Label',{'Width (m)'},...
-                'Format',{'-'});  
-        end
-%%
         function [zregime,yregime,bhw,Wmx] = breach_model(obj,mobj)
             %calculate the breach regime section
             site = mobj.Inputs.mrSiteData;        
@@ -275,5 +237,65 @@ classdef mrBreachModel < muiDataSet
             Wb(ind) = sact(ind).*vt(ind)./ucr(ind)./ht0(ind);
             Hb  = ar*Wb.^nr; 
         end 
+%%
+        function breachModelPlot(obj,ax,sV,iV)
+            %plot sections as tab plot or stand-alone figure
+            dst = obj.Data.Dataset;
+            z = dst.zCoords;%z co-ordinate data
+            x = dst.Dimensions.X;
+            p = obj.WidthVals;
+
+            zhw = iV.zHWlevel;          %HW level (mOD)
+            zlw = iV.zLWlevel;          %LW level (mOD)
+            z0  = sV.z0level;           %lowest inerodile site level (mOD)
+            
+            plot( x,z,...
+             '-r', 'DisplayName', 'Regime profile',...
+             'XDataSource', 'yreg', 'YDataSource', 'xreg','LineWidth',1.5);
+            xlabel('Distance (m)'); ylabel('Elevation (mODN)');
+            hold on
+            if ~isempty(p.bhw)
+                hwline = [zhw zhw]; lwline = [zlw zlw]; zsline = [z0 z0];
+                yline = [0 p.bhw*2];
+                yrect = [p.bhw-p.Wmx/2 p.bhw-p.Wmx/2 p.bhw+p.Wmx/2 p.bhw+p.Wmx/2]; 
+                zrect = [zhw z0 z0 zhw];
+                plot(yline,hwline,'--b','LineWidth',1,'DisplayName','High water');
+                plot(yline,lwline,'--b','LineWidth',1,'DisplayName','Low water');
+                plot(yline,zsline,'-.g','LineWidth',1,'DisplayName','Breach invert');
+                plot(yrect,zrect,':m','LineWidth',1,'DisplayName','Minimum box section');
+            end
+            hold off
+            legend('show','Location','southwest')
+            title(dst.Description)
+            ax.Color = [0.96,0.96,0.96];  %needs to be set after plot            
+        end
+%%
+        function dsp = modelDSproperties(~) 
+            %define a dsproperties struct and add the model metadata
+            dsp = struct('Variables',[],'Row',[],'Dimensions',[]); 
+            %define each variable to be included in the data table and any
+            %information about the dimensions. dstable Row and Dimensions can
+            %accept most data types but the values in each vector must be unique
+            
+            %struct entries are cell arrays and can be column or row vectors
+            dsp.Variables = struct(...                       % <<Edit metadata to suit model
+                'Name',{'zCoords'},...
+                'Description',{'Elevation'},...
+                'Unit',{'mOD'},...
+                'Label',{'Elevation (mOD)'},...
+                'QCflag',{'model'}); 
+            dsp.Row = struct(...
+                'Name',{''},...
+                'Description',{''},...
+                'Unit',{''},...
+                'Label',{''},...
+                'Format',{''});        
+            dsp.Dimensions = struct(...    
+                'Name',{'X'},...
+                'Description',{'Width'},...
+                'Unit',{'m'},...
+                'Label',{'Width (m)'},...
+                'Format',{'-'});  
+        end
     end           
 end
