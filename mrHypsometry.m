@@ -95,57 +95,40 @@ classdef mrHypsometry < muiPropertyUI
 %%
         function tabHypsometry(mobj,src,~)
             %generate plot for display on Hypsometry tab
-
+            tabcb  =  @(src,evdat)mrHypsometry.tabHypsometry(mobj,src,evdat);
+            ax = tabfigureplot(mobj,src,tabcb,false);  
             if strcmp(src.Tag,'FigButton')
-                obj = getClassObj(mobj,'Inputs','mrHypsometry'); %hypsometry instance
-                hfig = figure('Tag','PlotFig');
-                ax = axes('Parent',hfig,'Tag','PlotFig','Units','normalized');
-                plotHypsometry(obj,ax);
-            else
-                ht = findobj(src,'Type','axes');
-                delete(ht);
-                ax = axes('Parent',src,'Tag','Q-Plot');
-                %check that hypsommetry has been generated
-                obj = getClassObj(mobj,'Inputs','mrHypsometry'); %hypsometry instance
-                isvalid = isValidModel(mobj,'mrBreachModel');    %input data
-                if ~isvalid && isempty(obj)
-                    warndlg('No input or observed data available')
+                src = ax.Parent;  %change src to handle of new figure
+            end
+            
+            %check that hypsommetry has been generated
+            obj = getClassObj(mobj,'Inputs','mrHypsometry'); %hypsometry instance
+            isvalid = isValidModel(mobj,'mrBreachModel');    %input data
+            if ~isvalid && isempty(obj)
+                warndlg('No input or observed data available')
+                return;
+            elseif isempty(obj)
+                obj = mrHypsometry(mobj);
+            end
+            %
+            if isvalid && isempty(obj.FitHypLevels)
+                obj = strahlerHypsometry(obj,mobj);
+                if isempty(obj.cstCoefficient)
+                    warndlg('No root found for cst coefficient')
                     return;
-                elseif isempty(obj)
-                    obj = mrHypsometry(mobj);
                 end
-                %
-                if isvalid && isempty(obj.FitHypLevels)
-                    obj = strahlerHypsometry(obj,mobj);
-                    if isempty(obj.cstCoefficient)
-                        warndlg('No root found for cst coefficient')
-                        return;
-                    end
-                    obj = fittedData(obj,mobj);
-                end
-                %plot results
-                plotHypsometry(obj,ax);
-                txtstr = 'The thicker line is the hypsometry currrently selected for the model';                
-                hx = findobj(src,'Tag','IStext');
-                if isempty(hx)
-                    uicontrol('Parent',src,...
-                        'Style','text','String',txtstr,...
-                        'HorizontalAlignment','left',...
-                        'Units','normalized','Position',[0.15,0.86,0.6,0.04],...
-                        'Tag','IStext');
-                end
-                
-                hb = findobj(src,'Tag','FigButton');
-                if isempty(hb)
-                    %button to create plot as stand-alone figure
-                    uicontrol('Parent',src,'Style','pushbutton',...
-                        'String','>Figure','Tag','FigButton',...
-                        'TooltipString','Create plot as stand alone figure',...
-                        'Units','normalized','Position',[0.88 0.95 0.10 0.044],...
-                        'Callback',@(src,evdat)mrHypsometry.tabHypsometry(mobj,src,evdat));
-                else
-                    hb.Callback = @(src,evdat)tabPlot(obj,src);
-                end
+                obj = fittedData(obj,mobj);
+            end
+            %plot results
+            plotHypsometry(obj,ax);
+            txtstr = 'The thicker line is the hypsometry currrently selected for the model';                
+            hx = findobj(src,'Tag','IStext');
+            if isempty(hx)
+                uicontrol('Parent',src,...
+                    'Style','text','String',txtstr,...
+                    'HorizontalAlignment','left',...
+                    'Units','normalized','Position',[0.15,0.86,0.6,0.04],...
+                    'Tag','IStext');
             end
         end
     end

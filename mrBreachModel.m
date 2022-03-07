@@ -74,27 +74,9 @@ classdef mrBreachModel < muiDataSet
             %data is retrieved by GUIinterface.getTabData    
             sV = mobj.Inputs.mrSiteData;
             iV = mobj.Inputs.mrBreachData;
-            if strcmp(src.Tag,'FigButton')
-                hfig = figure('Tag','PlotFig');
-                ax = axes('Parent',hfig,'Tag','PlotFig','Units','normalized');
-                breachModelPlot(obj,ax,sV,iV);             
-            else
-                ht = findobj(src,'Type','axes');
-                delete(ht);
-                ax = axes('Parent',src,'Tag','Q-Plot');
-                breachModelPlot(obj,ax,sV,iV); 
-                hb = findobj(src,'Tag','FigButton');
-                if isempty(hb)
-                    %button to create plot as stand-alone figure
-                    uicontrol('Parent',src,'Style','pushbutton',...
-                        'String','>Figure','Tag','FigButton',...
-                        'TooltipString','Create plot as stand alone figure',...
-                        'Units','normalized','Position',[0.88 0.95 0.10 0.044],...
-                        'Callback',@(src,evdat)tabPlot(obj,src,mobj));
-                else
-                    hb.Callback = @(src,evdat)tabPlot(obj,src,mobj);     
-                end
-            end            
+            tabcb  = @(src,evdat)tabPlot(obj,src,mobj);
+            ax = tabfigureplot(obj,src,tabcb,false);   
+            breachModelPlot(obj,ax,sV,iV);          
         end
     end 
 %%    
