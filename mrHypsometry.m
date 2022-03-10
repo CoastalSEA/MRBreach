@@ -31,7 +31,9 @@ classdef mrHypsometry < muiPropertyUI
         rstCoefficient              %coefficient rst used in fitted hypsometry
         cstCoefficient              %coefficient cst used in fitted hypsometry
         FitHypLevels                %array of fitted site levels (mOD)
-        FitHypAreas                 %array of fitted plan areas (m2)        
+        FitHypAreas                 %array of fitted plan areas (m2)    
+        EqHypLevels                 %array of equilibrium site levels (mOD)
+        EqHypAreas                  %array of equilibrium plan area (m2)
     end
     
     properties
@@ -163,8 +165,8 @@ classdef mrHypsometry < muiPropertyUI
             Slider(obj,'rstCoefficient',Rpos,mobj);
             Cpos = [0.55,0.02,0.4,0.03];
             Slider(obj,'cstCoefficient',Cpos,mobj);
-            promptxt = 'Use Fit or Obs?';
-            h_pnl = acceptpanel(obj.HypFig,promptxt,{'Fit','Obs'},[0.43,0.927,0.2,0.07]);  
+            promptxt = 'Use Fit, Eq or Obs?';
+            h_pnl = acceptpanel(obj.HypFig,promptxt,{'Fit','Eq','Obs'},[0.43,0.927,0.2,0.07]);  
             waitfor(h_pnl,'Tag');
             %fitted model is the default if figure closed with Exit button or there is no data
             obj.HypSelection = 1;         %use fitted model 
@@ -213,7 +215,16 @@ classdef mrHypsometry < muiPropertyUI
             obj.rstCoefficient = rst;
             obj.cstCoefficient = cst;
         end
-        
+%%
+        function friedrichHypsometry(obj,mobj)
+            %use equilbirum profile under tidal action on an embayed shore
+            %to define "equilibrium" hypsometry
+            iV  = mobj.Inputs.mrBreachData;  %input data
+            sV  = mobj.Inputs.mrSiteData;    %site data
+            obj.EqHypLevels = 1;
+            obj.EqHypAreas = 1;
+            
+        end
  %% ----Graphical controls ----->    
         function plotHypsometry(obj,ax)
             %plot the theoretical and measured site hypsometry
