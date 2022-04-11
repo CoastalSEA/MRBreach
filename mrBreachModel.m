@@ -15,7 +15,8 @@ classdef mrBreachModel < muiDataSet
     properties
         %inherits Data, RunParam, MetaData and CaseIndex from muiDataSet
         %Additional properties:     
-        WidthVals = []            %structure for width values   
+        WidthVals = []            %structure for width values  
+        BreachVelocity            %limiting velocity in breach
     end
     
     methods (Access = private)
@@ -31,7 +32,7 @@ classdef mrBreachModel < muiDataSet
         function obj = runModel(mobj)
             %function to run a simple 2D diffusion model
             obj = mrBreachModel;                           
-            dsp = modelDSproperties(obj);
+            [dspX,dspZ] = modelDSproperties(obj);
             
             %now check that the input data has been entered
             %isValidModel checks the InputHandles defined in ModelUI
@@ -46,24 +47,35 @@ classdef mrBreachModel < muiDataSet
 %--------------------------------------------------------------------------
 % Model code
 %--------------------------------------------------------------------------
-            [results,xy,bhw,Wmx] = breach_model(obj,mobj);                       
+            [results,xy,bhw,Wmx,props] = breach_model(obj,mobj);                       
 %--------------------------------------------------------------------------
 % Assign model output to a dstable using the defined dsproperties meta-data
 %--------------------------------------------------------------------------                   
             %each variable should be an array in the 'results' cell array
             %if model returns single variable as array of doubles, use {results}
-            dst = dstable(results{:},'DSproperties',dsp);
-            dst.Dimensions.X = xy{:,1};     %grid x-coordinate
-            obj.WidthVals.bhw  = bhw;   %half width at high water                    
-            obj.WidthVals.Wmx  = Wmx;   %maximum width 
+            dst = dstable(results{:},'DSproperties',dspX);
+            dst.Dimensions.X = xy{:,1};                   %grid x-coordinate
+            obj.WidthVals.bhw  = bhw;                     %half width at high water                    
+            obj.WidthVals.Wmx  = Wmx;                     %maximum width 
+            [umax,idu] = max(props.HorzVelocity); %limiting velocity in breach
+            obj.BreachVelocity = [umax,props.WaterLevel(idu)];         
 %--------------------------------------------------------------------------
 % Save results
 %--------------------------------------------------------------------------                        
             %assign metadata about model
             dst.Source = metaclass(obj).Name;
             dst.MetaData = sprintf('Breach regime section for %d breaches',mobj.Inputs.mrSiteData.nBreaches);
+            dsti.Section = dst;
+
+            modeltime = hours(props.Time);
+            props = struct2cell(props);
+            dst = dstable(props{2:end},'RowNames',modeltime,'DSproperties',dspZ);
+            %assign metadata about model
+            dst.Source = metaclass(obj).Name;
+            dst.MetaData = sprintf('Properties for %d breaches',mobj.Inputs.mrSiteData.nBreaches);                
+            dsti.Properties = dst;
             %save results
-            setDataSetRecord(obj,muicat,dst,'model');
+            setDataSetRecord(obj,muicat,dsti,'model');
             getdialog('Run complete');
         end
     end
@@ -81,7 +93,7 @@ classdef mrBreachModel < muiDataSet
     end 
 %%    
     methods (Access = private)
-        function [zregime,yregime,bhw,Wmx] = breach_model(obj,mobj)
+        function [zregime,yregime,bhw,Wmx,props] = breach_model(obj,mobj)
             %calculate the breach regime section
             site = mobj.Inputs.mrSiteData;        
             hydr = mobj.Inputs.mrBreachData;
@@ -183,7 +195,7 @@ classdef mrBreachModel < muiDataSet
 %to reflect the regime conditions at lower water levels
 %--------------------------------------------------------------------------
             Wbmx  = max(Wb);          %maximum regime width
-            itx   = Wb==Wbmx;   %index of maximium width
+            itx   = Wb==Wbmx;         %index of maximium width
             mu    = 6*ar*Wbmx^(nr-1); %value of mu at maximum regime width
             ztx   = zact(itx);        %elevation of maximum regime width
             dz    = zhw-ztx;          %depth of maximum regime width below hw
@@ -210,6 +222,9 @@ classdef mrBreachModel < muiDataSet
             y(1) = y(1)+0.1; %offset to avoid duplicates at mid-point
             yregime = {maxy+[fliplr(-y) y]};
             zregime = {[fliplr(zbed) zbed]}; %cell array of variables
+            props = struct('Time',tz','WaterLevel',zact','BreachArea',(Wb.*Hb)',...
+                           'HorzVelocity',ucr0','VertVelocity',vt',...
+                           'PlanArea',sact'*nob);
         end
 %%        
         function [Wb,Hb] = getWbHb(~,ht0,ucr,ar,nr,sact,vt)               
@@ -222,10 +237,11 @@ classdef mrBreachModel < muiDataSet
 %%
         function breachModelPlot(obj,ax,sV,iV)
             %plot sections as tab plot or stand-alone figure
-            dst = obj.Data.Dataset;
+            dst = obj.Data.Section;
             z = dst.zCoords;%z co-ordinate data
             x = dst.Dimensions.X;
             p = obj.WidthVals;
+            u = obj.BreachVelocity;
 
             zhw = iV.zHWlevel;          %HW level (mOD)
             zlw = iV.zLWlevel;          %LW level (mOD)
@@ -249,35 +265,58 @@ classdef mrBreachModel < muiDataSet
             hold off
             legend('show','Location','southwest')
             title(dst.Description)
+            subtitle(sprintf('Max.vel.in breach = %.2f m/s for zwl = %.1f m; Whw  = %.1f m; Wmin = %.1f m',u(1),u(2),2*p.bhw,p.Wmx))
             ax.Color = [0.96,0.96,0.96];  %needs to be set after plot            
         end
 %%
-        function dsp = modelDSproperties(~) 
+        function [dspX,dspZ] = modelDSproperties(~) 
             %define a dsproperties struct and add the model metadata
             dsp = struct('Variables',[],'Row',[],'Dimensions',[]); 
             %define each variable to be included in the data table and any
             %information about the dimensions. dstable Row and Dimensions can
             %accept most data types but the values in each vector must be unique
-            
+            dspX = dsp; dspZ = dsp;
             %struct entries are cell arrays and can be column or row vectors
-            dsp.Variables = struct(...                       % <<Edit metadata to suit model
+            dspX.Variables = struct(...                       
                 'Name',{'zCoords'},...
                 'Description',{'Elevation'},...
-                'Unit',{'mOD'},...
-                'Label',{'Elevation (mOD)'},...
+                'Unit',{'mAD'},...
+                'Label',{'Elevation (mAD)'},...
                 'QCflag',{'model'}); 
-            dsp.Row = struct(...
+            dspX.Row = struct(...
                 'Name',{''},...
                 'Description',{''},...
                 'Unit',{''},...
                 'Label',{''},...
                 'Format',{''});        
-            dsp.Dimensions = struct(...    
+            dspX.Dimensions = struct(...    
                 'Name',{'X'},...
                 'Description',{'Width'},...
                 'Unit',{'m'},...
                 'Label',{'Width (m)'},...
-                'Format',{'-'});  
+                'Format',{'-'}); 
+            %  
+            dspZ.Variables = struct(...                       
+                'Name',{'z','CSA','u','v','S'},...
+                'Description',{'Water level','Breach Section Area'...
+                               'Horizontal velocity','Vertical velocity',...
+                               'Total plan area'},...
+                'Unit',{'mAD','m^2','m/s','m/s','m^2'},...
+                'Label',{'Elevation (mAD)','Section Area (m^2)','Velocity (m/s)',...
+                               'Velocity (m/s)','Plan Area (m^2)'},...
+                'QCflag',{'model','model','model','model','model'});   
+            dspZ.Row = struct(...
+                'Name',{'T'},...
+                'Description',{'Time'},...
+                'Unit',{'hr'},...
+                'Label',{'Time (hrs)'},...
+                'Format',{'h'});  
+            dspZ.Dimensions = struct(...    
+                'Name',{''},...
+                'Description',{''},...
+                'Unit',{''},...
+                'Label',{''},...
+                'Format',{''}); 
         end
     end           
 end

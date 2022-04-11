@@ -166,7 +166,7 @@ classdef mrHypsometry < muiPropertyUI
             Cpos = [0.55,0.02,0.4,0.03];
             Slider(obj,'cstCoefficient',Cpos,mobj);
             promptxt = 'Use Fit, Eq or Obs?';
-            h_pnl = acceptpanel(obj.HypFig,promptxt,{'Fit','Eq','Obs'},[0.43,0.927,0.2,0.07]);  
+            h_pnl = acceptpanel(obj.HypFig,promptxt,{'Fit','Eq','Obs'},[0.005 0.92 0.99 0.08]);
             waitfor(h_pnl,'Tag');
             %fitted model is the default if figure closed with Exit button or there is no data
             obj.HypSelection = 1;         %use fitted model 
@@ -175,6 +175,7 @@ classdef mrHypsometry < muiPropertyUI
             elseif strcmp(h_pnl.Tag,'Obs')
                 obj.HypSelection = 0;     %use observations 
             end
+            delete(h_pnl)
         end
         
  %% ---Main calculation functions---->

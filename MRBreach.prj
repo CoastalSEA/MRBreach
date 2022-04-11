@@ -21,7 +21,7 @@
       <item>1</item>
     </param.products.id>
     <param.products.version>
-      <item>9.9</item>
+      <item>9.12</item>
     </param.products.version>
     <param.platforms />
     <param.output>${PROJECT_ROOT}</param.output>
@@ -53,7 +53,7 @@
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>C:\Program Files\MATLAB\R2020b</root>
+      <root>C:\Program Files\MATLAB\R2022a</root>
       <toolboxes />
     </matlab>
     <platform>
