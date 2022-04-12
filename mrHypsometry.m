@@ -58,7 +58,7 @@ classdef mrHypsometry < muiPropertyUI
             classname = 'mrHypsometry';              
             obj = getClassObj(mobj,'Inputs',classname);
             if isempty(obj)
-                obj = mrBHypsometry(mobj);             
+                obj = mrHypsometry(mobj);             
             end   
             
             [fname,path,~] = getfiles('FileType','*.txt');

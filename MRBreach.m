@@ -99,11 +99,16 @@ classdef MRBreach < muiModelUI
             
             %% Setup menu -------------------------------------------------
             menu.Setup(1).List = {'Hydraulic Parameters','Site Parameters',...
-                                      'Site Hypsometry','Model Constants'};                                    
-            menu.Setup(1).Callback = repmat({@obj.setupMenuOptions},[1,4]);
-            %add separators to menu list (optional - default is off)
-            menu.Setup(1).Separator = {'off','off','off','on'}; %separator preceeds item
-            
+                                  'Site Hypsometry','Saltmarsh','Model Constants'};                                    
+            menu.Setup(1).Callback = repmat({@obj.setupMenuOptions},[1,5]);   
+            menu.Setup(1).Callback{4} = 'gcbo;';
+            menu.Setup(1).Separator = {'off','off','off','off','on'}; %separator preceeds item
+   
+            % submenu for Saltmarsh data
+            menu.Setup(2).List = {'Species Parameters','Equilibrium Marsh Depth',...
+                'Biomass Distribution','Marsh-flat Animation'};
+            menu.Setup(2).Callback = repmat({@obj.saltmarshProps},[1,4]);
+
             %% Run menu ---------------------------------------------------
             menu.Run(1).List = {'Set Hypsometry','Run Model','Derive Output'};
             menu.Run(1).Callback = repmat({@obj.runMenuOptions},[1,3]);
@@ -148,9 +153,10 @@ classdef MRBreach < muiModelUI
             %         bottom left [0.45, 0.48]; bottom rigth [0.45,0.97]
                                                              
             props = {...                                   
-                'mrBreachData','Inputs',[0.9,0.95],{180,60},'Hydraulic data:';...  
-                'mrHypsometry','Inputs',[0.35,0.95],{80,420},'Site hypsometry file:';...  
-                'mrSiteData','Inputs',[0.9,0.48],{180,60},'Site data:'};  
+                'mrBreachData','Inputs',[0.95,0.95],{180,60},'Hydraulic data:';...  
+                'mrHypsometry','Inputs',[0.12,0.95],{80,420},'Site hypsometry file:';...  
+                'mrSiteData','Inputs',[0.95,0.48],{180,60},'Site data:';...
+                'mrSaltmarsh','Inputs',[0.53,0.48],{160,80},'Saltmarsh data:'};  
         end    
  %%
         function setTabAction(obj,src,cobj)
@@ -184,20 +190,32 @@ classdef MRBreach < muiModelUI
             switch src.Text
                 case 'Hydraulic Parameters'                    
                     mrBreachData.setInput(obj);  
-                    %update tab display with input data
-                    tabsrc = findobj(obj.mUI.Tabs,'Tag','Inputs');
-                    InputTabSummary(obj,tabsrc);
+                    tabUpdate(obj,'Inputs');
                 case 'Site Parameters'                        
                     mrSiteData.setInput(obj);  
-                    %update tab display with input data
-                    tabsrc = findobj(obj.mUI.Tabs,'Tag','Inputs');
-                    InputTabSummary(obj,tabsrc);
+                    tabUpdate(obj,'Inputs');
                 case 'Site Hypsometry'
                     mrHypsometry.loadHypsometry(obj); 
                 case 'Model Constants'
                     obj.Constants = setInput(obj.Constants);
             end
         end  
+        %% 
+        function saltmarshProps(obj,src,~)
+            %callback functions to setup saltmarsh
+            switch src.Text
+                case 'Species Parameters'
+                    mrSaltmarsh.setInput(obj);
+                    tabUpdate(obj,'Inputs');
+                case 'Equilibrium Marsh Depth'
+                    mrSaltmarsh.EqDepthBiomassPlot(obj);
+                case 'Biomass Distribution'
+                    mrSaltmarsh.BiomassDistributionPlot(obj);
+                case 'Marsh-flat Animation'
+                    mrSaltmarsh.MarshFlatAnimation(obj);
+            end
+        end
+
         %% Run menu -------------------------------------------------------
         function runMenuOptions(obj,src,~)
             %callback functions to run model
@@ -225,13 +243,16 @@ classdef MRBreach < muiModelUI
         function Help(~,~,~)
             doc mrbreach                               % << Edit to documentation name if available
         end
-%% ------------------------------------------------------------------------
-% Overload muiModelUI.MapTable to customise Tab display of records (if required)
-%--------------------------------------------------------------------------     
-%         function MapTable(obj,ht)
-%             %create tables for Record display tabs - called by DrawMap
-%             % ht - tab handle
-%         end
+    end
+%%
+    methods (Access=private)
+        function tabUpdate(obj,tabname)
+            %update tab used for properties if required
+            if ~isempty(tabname)
+                tabsrc = findobj(obj.mUI.Tabs,'Tag',tabname);
+                InputTabSummary(obj,tabsrc);
+            end 
+        end
     end
 end    
     

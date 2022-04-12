@@ -38,6 +38,10 @@ classdef mrBreachData < muiPropertyUI
         FetchLength         %available fetch length, m
         FetchDepth          %average water depth over fetch, m
     end
+
+    properties (Dependent)
+        TidalAmp            %tidal amplitude (mO
+    end
 %%   
     methods (Access=protected)
         function obj = mrBreachData(mobj) 
@@ -67,5 +71,10 @@ classdef mrBreachData < muiPropertyUI
         end     
     end  
 %%     
-        %add other functions to operate on properties as required    
+    methods
+        function amp = get.TidalAmp(obj)
+            %get tidal amplitude for high amd low water levels
+            amp = (obj.zHWlevel-obj.zLWlevel)/2;
+        end
+    end
 end
