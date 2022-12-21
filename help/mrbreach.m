@@ -33,9 +33,9 @@
 % * *mrBreachModel* - computes breach regime section
 
 %% Manual
-% The <matlab:open_manual manual> provides further details of setup and 
+% The <matlab:mrb_open_manual manual> provides further details of setup and 
 % configuration of the model. The files for the example use case can be found in
-% the example folder <matlab:example_folder here>. 
+% the example folder <matlab:mrb_example_folder here>. 
 
 %% See Also
 % <matlab:doc('muitoolbox') muitoolbox>, <matlab:doc('dstoolbox') dstoolbox>.
