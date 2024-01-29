@@ -63,6 +63,7 @@ classdef mrHypsometry < muiPropertyUI
             
             [fname,path,~] = getfiles('FileType','*.txt');
             filename = [path fname];
+            if isempty(filename), return; end
             obj.HypsometryFile = filename;
             dataSpec = '%f %f'; 
             nhead = 2;     %number of header lines

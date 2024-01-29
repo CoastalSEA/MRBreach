@@ -228,7 +228,7 @@ classdef MRBreach < muiModelUI
                 case 'Run Model'                         
                     mrBreachModel.runModel(obj); 
                 case 'Derive Output'
-                    obj.mUI.Manip = muiManipUI.getManipUI(obj);
+                    obj.mUI.ManipUI = muiManipUI.getManipUI(obj);
             end            
         end               
             
