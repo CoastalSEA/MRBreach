@@ -248,9 +248,18 @@ classdef MRBreach < muiModelUI
             %menu to access online documentation and manual pdf file
             switch src.Text
                 case 'Documentation'
-                    doc mrbreach   %must be name of html help file  
+                    if ~isdeployed
+                        doc mrbreach   %must be name of html help file  
+                    end
                 case 'Manual'
-                    mrb_open_manual;
+                    if isdeployed
+                        %executable using the Matlab Runtime
+                        [~, result] = system('path');
+                        currentDir = char(regexpi(result, 'Path=(.*?);', 'tokens', 'once'));
+                        winopen([currentDir,filesep,'MRBreach manual.pdf'])
+                    else
+                        mrb_open_manual;
+                    end
             end
         end  
         %% Check that toolboxes are installed------------------------------
