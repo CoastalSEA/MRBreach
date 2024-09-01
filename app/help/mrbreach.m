@@ -1,14 +1,14 @@
 %% MRBreach
 % Application to compute the breach dimensions required for a Managed
-% Realignment site.
+% Realignment site.##
 
 %% Licence
 % The code is provided as Open Source code (issued under a GNU General 
 % Public License).
 
 %% Requirements
-% ModelUI is written in Matlab(TM) and requires v2016b, or later. In addition, 
-% ModelUI requires both the <matlab:doc('dstoolbox') dstoolbox> and the 
+% MRBreach is written in Matlab(TM) and requires v2016b, or later. In addition, 
+% MRBreach requires both the <matlab:doc('dstoolbox') dstoolbox> and the 
 % <matlab:doc('muitoolbox') muitoolbox>
 
 %% Background
